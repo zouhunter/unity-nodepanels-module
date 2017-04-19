@@ -25,10 +25,6 @@ public class NodePanelPairDrawer : PropertyDrawer
 
             OpenType type = (OpenType)typeProp.intValue;
 
-            if ((type & OpenType.ByToggle) == OpenType.ByToggle)
-            {
-                height += EditorGUIUtility.singleLineHeight;
-            }
             if ((type & OpenType.ByButton) == OpenType.ByButton)
             {
                 height += EditorGUIUtility.singleLineHeight;
@@ -53,21 +49,19 @@ public class NodePanelPairDrawer : PropertyDrawer
         }
         else
         {
-
-            EditorGUI.PropertyField(rect, hideSelfProp);
-
             var obj = new SerializedObject(nodePanelProp.objectReferenceValue);
             var typeProp = obj.FindProperty("openType");
 
             OpenType type = (OpenType)typeProp.intValue;
 
-            if ((type & OpenType.ByToggle) == OpenType.ByToggle)
+            if (type  == OpenType.ByToggle)
             {
-                rect.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(rect, openTogProp);
             }
-            if ((type & OpenType.ByButton) == OpenType.ByButton)
+            if (type == OpenType.ByButton)
             {
+                EditorGUI.PropertyField(rect, hideSelfProp);
+
                 rect.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(rect, openBtnProp);
             }
