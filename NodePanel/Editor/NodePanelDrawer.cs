@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using UnityEditor;
 using Rotorz.ReorderableList;
-using NodePanels;
+using PanelNode;
 
 [CustomPropertyDrawer(typeof(NodePanelPair)), CanEditMultipleObjects]
 public class NodePanelPairDrawer : PropertyDrawer
@@ -25,6 +25,10 @@ public class NodePanelPairDrawer : PropertyDrawer
 
             OpenType type = (OpenType)typeProp.intValue;
 
+            if ((type & OpenType.ByToggle) == OpenType.ByToggle)
+            {
+                height += EditorGUIUtility.singleLineHeight;
+            }
             if ((type & OpenType.ByButton) == OpenType.ByButton)
             {
                 height += EditorGUIUtility.singleLineHeight;
@@ -49,19 +53,21 @@ public class NodePanelPairDrawer : PropertyDrawer
         }
         else
         {
+
+            EditorGUI.PropertyField(rect, hideSelfProp);
+
             var obj = new SerializedObject(nodePanelProp.objectReferenceValue);
             var typeProp = obj.FindProperty("openType");
 
             OpenType type = (OpenType)typeProp.intValue;
 
-            if (type  == OpenType.ByToggle)
+            if ((type & OpenType.ByToggle) == OpenType.ByToggle)
             {
+                rect.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(rect, openTogProp);
             }
-            if (type == OpenType.ByButton)
+            if ((type & OpenType.ByButton) == OpenType.ByButton)
             {
-                EditorGUI.PropertyField(rect, hideSelfProp);
-
                 rect.y += EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(rect, openBtnProp);
             }
@@ -94,10 +100,10 @@ public class NodePanelDrawer : Editor
     {
         serializedObject.Update();
         EditorGUILayout.PropertyField(script);
-        EditorGUILayout.PropertyField(openTypeProp);
+        openTypeProp.intValue = EditorGUILayout.MaskField("打开方式",openTypeProp.intValue, openTypeProp.enumNames);
         OpenType type = (OpenType)openTypeProp.intValue;
 
-        if (type == OpenType.ByButton){
+        if ((type & OpenType.ByName) == OpenType.ByName || (type & OpenType.ByButton) == OpenType.ByButton){
             EditorGUILayout.PropertyField(closeBtnProp);
         }
         ReorderableListGUI.Title("相关面板");

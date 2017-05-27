@@ -3,23 +3,24 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections.Generic;
 
-namespace NodePanels
+namespace PanelNode
 {
     public sealed class NodePanel : MonoBehaviour
     {
         public Button closeBtn;
         public OpenType openType;
         public List<NodePanelPair> relatedPanels;
+        public GameObject prefab;
         private UnityAction onClose;
         private void Awake()
         {
-            if (openType == OpenType.ByButton){
+            if (openType == OpenType.ByName || openType == OpenType.ByButton){
                 if(closeBtn) closeBtn.onClick.AddListener(Close);
             }
             for (int i = 0; i < relatedPanels.Count; i++)
             {
                 NodePanelPair pair = relatedPanels[i];
-                if (pair.nodePanel.openType == OpenType.ByButton)
+                if ((pair.nodePanel.openType & OpenType.ByButton) == OpenType.ByButton)
                 {
                     if (pair.openBtn != null) pair.openBtn.onClick.AddListener(() =>
                     {
@@ -50,6 +51,31 @@ namespace NodePanels
                         }
                     });
                 }
+                if ((pair.nodePanel.openType & OpenType.ByName) == OpenType.ByName)
+                {
+                    INodeSendPanel nodeUsePanel = GetComponent<INodeSendPanel>();
+                    if (nodeUsePanel == null)
+                    {
+                        Debug.LogWarning("脚本未继承节点脚本接口");
+                        return;
+                    }
+                    if (!string.IsNullOrEmpty(pair.nodePanel.name)) nodeUsePanel.OpenEvent += ((key,onclose, data) =>
+                    {
+                        if (pair.nodePanel.name != key) return;
+                        if (pair.hideSelf)
+                        {
+                            if(pair.nodePanel.Open(() => { if (onclose != null) onclose(); UnHide(); }, data))
+                            {
+                                Hide();
+                            }
+                        }
+                        else
+                        {
+                            pair.nodePanel.Open(onclose, data);
+                        }
+
+                    });
+                }
             }
         }
         public void Hide()
@@ -63,8 +89,8 @@ namespace NodePanels
 
         public bool Open(UnityAction onClose)
         {
-            IOpenAble panel = gameObject.GetComponent<IOpenAble>();
-            if ((panel != null && panel.OpenAble()) || panel == null)
+            INodeReceivePanel panel = gameObject.GetComponent<INodeReceivePanel>();
+            if ((panel != null && panel.CanOpen()) || panel == null)
             {
                 UnHide();
                 this.onClose = onClose;
@@ -75,17 +101,41 @@ namespace NodePanels
                 return false;
             }
         }
-        public void Close()
+
+        public bool Open(UnityAction onClose, object data)
         {
-            ICloseAble panel = gameObject.GetComponent<ICloseAble>();
-            if ((panel != null && panel.CloseAble()) || panel == null)
+            INodeReceivePanel panel = gameObject.GetComponent<INodeReceivePanel>();
+            if (panel != null && panel.CanOpen())
             {
-                for (int i = 0; i < relatedPanels.Count; i++){
-                    relatedPanels[i].nodePanel.Hide();
-                }
-                if (onClose != null) onClose.Invoke();
-                Hide();
+                UnHide();
+                panel.HandleOpenData(data);
+                this.onClose = onClose;
+                return true;
+            }
+            else if(panel == null)
+            {
+                UnHide();
+                this.onClose = onClose;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
+
+        public void Close()
+        {
+            if ((openType & OpenType.ByName) == OpenType.ByName && !gameObject.GetComponent<INodeReceivePanel>().CloseAble()){
+                return;
+            }
+            for (int i = 0; i < relatedPanels.Count; i++){
+                relatedPanels[i].nodePanel.Hide();
+            }
+            if (onClose != null) onClose.Invoke();
+            Hide();
+        }
+
+
     }
 }

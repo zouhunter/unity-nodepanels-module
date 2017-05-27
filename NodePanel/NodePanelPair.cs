@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections.Generic;
 
-namespace NodePanels
+namespace PanelNode
 {
     [System.Serializable]
     public class NodePanelPair
